@@ -1,0 +1,30 @@
+<!DOCTYPE html >
+<html>
+  <head>
+    <meta charset='UTF-8'/>
+    <title>Mapbox GL JS rendering OS Open Map vector data</title>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.4.0/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.4.0/mapbox-gl.js'></script>
+    <style>
+      body { margin:0; padding:0 }
+      #map { position:absolute; top:0; bottom:50px; width:100%; }
+    </style>
+  </head>
+  <body>
+    <div id='map'>
+    </div>
+    <script>
+      var map = new mapboxgl.Map({
+        container: 'map',
+        center: [50.9210,-1.4423],
+        zoom: 13.1,
+  		minZoom: 7,
+  		maxZoom: 15,
+  		style: 'resources/minimal.json'
+      });
+      
+      map.addControl(new mapboxgl.Navigation({}));
+      
+    </script>
+  </body>
+</html>

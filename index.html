@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>OS Open Map sample data + Mapbox GL</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.7.0/mapbox-gl.css' rel='stylesheet' />
+<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.7.0/mapbox-gl.js'></script>
+
+<script src='resources/js/jquery/jquery-1.10.1.min.js'></script>
+<style>
+  body { margin:0; padding:0; }
+  #map { position:absolute; top:0; bottom:0; width:100%; }
+  #overlay {
+	  left: 12px;
+	  top: 12px;
+	  width: 224px;
+	  padding: 0 16px;
+	  background: rgba(0,0,0,0.68);
+	  border-radius: 4px 4px;
+	  color: #FFF;
+	  z-index: 100;
+	  position: absolute;
+
+	font-family: Lucida Sans Unicode, Lucida Grande, sans-serif;
+	font-size: 0.76em;
+	line-height: 1.5em;
+	color: #FFF;
+  }
+  .action {
+	 border-bottom: 1px dotted #999;
+	 padding-bottom: 0;
+	 display: inline;
+  }
+  .action:hover {
+	 cursor:pointer;
+	 /*color: #ECCB1D;*/
+	 border-bottom: 1px dotted #ECCB1D;
+  }
+   .action.disabled{
+	cursor:default;
+	color:#CCCCCC;
+   }
+    .action.selected{
+
+	color:#ECCB1D;
+   }
+</style>
+</head>
+<body>
+<div id='map'></div>
+<div id='overlay'>
+	<p>Ordnance Survey vector data rendered on the client using the Mapbox GL Javascript API.</p>
+	<p>Requires Firefox, Chrome or Safari with WebGL enabled.</p>
+	<p>Scroll to zoom, right-click to rotate. Click compass icon (top-right) to reset north.</p>
+    <p>
+    <div>Position map on:</div>
+    <div class="action flyto" data-flyto-zoomlatlng="13.1/50.938130/-1.470587">Explorer House</div>&nbsp;&bull;
+    <div class="action flyto" data-flyto-zoomlatlng="13.1/50.9210/-1.4423">Southampton</div>&nbsp;&bull;
+    <!--
+    <div style="margin-top: 6px;">Style:</div>
+    <div class="action setclass" data-setclass-class="none">paperwhite</div>&nbsp;&bull;
+    <div class="action setclass" data-setclass-class="os">OS</div>&nbsp;&bull;
+    <div class="action setclass" data-setclass-class="grey">original</div>
+    </p>
+    -->
+	<p>&copy; Ordnance Survey OpenData 2015</p>
+</div>
+<script>
+var map;
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhaGFtZHVubG9wIiwiYSI6Im1lN3d1amMifQ.FMJv_VrUbEQSp_EqaKB4mw';
+
+map = new mapboxgl.Map({
+  container: 'map', // container id
+  style: 'resources/minimal.json', //stylesheet location
+  center: [50.9210,-1.4423], // starting position
+  zoom: 13.1,
+  minZoom: 7,
+  maxZoom: 15,
+  hash: true
+});
+
+map.addControl(new mapboxgl.Navigation({}));
+
+
+
+
+$(document).ready(function(){
+
+	$(".action.flyto").on("click",function(e){
+		flyto(e.target)
+
+	})
+	$(".action.setclass").on("click",function(e){
+		setclass(e.target)
+
+	})
+	$(".action.tilesource").on("click",function(e){
+		toggle_tilesource(e.target)
+
+	})
+
+	setclass($(".action.setclass")[0])
+
+	setup_map_events()
+})
+function setup_map_events(){
+	if(null!=map){
+
+	}else{
+		setTimeout(	setup_map_events,20)
+	}
+}
+
+var map_classes=[]
+function setclass(div){
+	if($(div).hasClass("selected")==false){
+		$(".action.setclass").removeClass("selected")
+
+		var class_name=$(div).attr("data-setclass-class")
+		console.log($(div))
+		console.log(class_name)
+
+		if(map_classes.length>0){
+			$.each(map_classes,function(index,item){
+				console.log(map.style.classes)
+				if(map.style.classes[item]){
+					if(item!=class_name){
+						map.style.removeClass(item)
+					}
+				}
+			})
+			map_classes=[]
+		}
+		if(class_name!="none"){
+			if(!map.style.classes[class_name]){
+				map_classes.push(class_name)
+				map.style.addClass(class_name)
+			}
+		}
+		$(div).addClass("selected")
+
+	}
+
+}
+
+function flyto(div){
+	var arr=$(div).attr("data-flyto-zoomlatlng").split("/")
+	map.flyTo(new mapboxgl.LatLng(arr[1], arr[2]), arr[0], 0)
+}
+var tilesource_by_id={}
+function toggle_tilesource(div){
+	if($(div).hasClass("selected")==true){
+		$(div).removeClass("selected")
+	}else{
+		$(div).addClass("selected")
+	}
+
+	$(".action.tilesource").each(function(index,item){
+		var id=$(item).attr("data-tilesource-id")
+		var id_no_dot=id.split(".").join("")
+		var url='mapbox://'+id
+		var type="vector"
+		var tileSize=512
+		if(null!=$(item).attr("data-tilesource-type")){
+			type=$(item).attr("data-tilesource-type")
+		}
+		if(null!=$(item).attr("data-tilesource-url")){
+			url=$(item).attr("data-tilesource-url")
+		}
+		if(null!=$(item).attr("data-tilesource-tilesize")){
+			tileSize=$(item).attr("data-tilesource-tilesize")*1
+		}
+		if(null==tilesource_by_id[id_no_dot]){
+			if($(item).hasClass("selected")==true){
+				var params={
+					type: type,
+					url: url,
+					type: type,
+					tileSize: tileSize
+				}
+
+				console.log(params)
+				console.log(params.url.split(":")[0])
+				tilesource_by_id[id_no_dot]=new mapboxgl.Source(params);
+				console.log(tilesource_by_id[id_no_dot])
+			}
+		}else{
+			console.log("remove: "+id_no_dot)
+			map.removeSource(id_no_dot)
+			if($(item).hasClass("selected")==false){
+				tilesource_by_id[id_no_dot]=null
+			}
+		}
+		if($(item).hasClass("selected")==true){
+			if(null!=tilesource_by_id[id_no_dot]){
+				console.log("adding")
+				console.log(tilesource_by_id[id_no_dot])
+				map.addSource(id_no_dot,tilesource_by_id[id_no_dot])
+				map.sources[id_no_dot].on("click",function(){
+					console.log("click")
+				})
+			}
+		}
+
+	})
+
+}
+
+</script>
+
+
+</body>
+</html>
